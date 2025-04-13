@@ -1,13 +1,30 @@
 "use client";
 
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
-import { BookMarkedIcon, BookOpen } from "lucide-react";
+import { BookMarkedIcon, BookOpen, User } from "lucide-react";
 import Link from "next/link";
 import { SearchInput } from "./SearchInput";
 import { Button } from "./ui/button";
 import DarkModeToggle from "./DarkModeToggle";
+import { useAuth } from "@/components/providers/auth-provider";
+import { AuthModal } from "./auth/AuthModal";
+import { signOut } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.refresh();
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4">
@@ -41,17 +58,39 @@ export default function Header() {
 
             <DarkModeToggle />
 
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-
-            <SignedOut>
-              <SignInButton mode="modal">
-                <Button variant="outline" size="default">
-                  Sign In
-                </Button>
-              </SignInButton>
-            </SignedOut>
+            {isLoading ? (
+              <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+            ) : user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="rounded-full">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem className="font-medium">
+                    {user.email}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-courses">My Courses</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <AuthModal
+                trigger={
+                  <Button variant="outline" size="default">
+                    Sign In
+                  </Button>
+                }
+              />
+            )}
           </div>
         </div>
       </div>

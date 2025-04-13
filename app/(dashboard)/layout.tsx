@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SanityLive } from "@/sanity/lib/live";
-import { ClerkProvider } from "@clerk/nextjs";
 import { SidebarProvider } from "@/components/providers/sidebar-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -15,7 +15,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <AuthProvider>
       <ThemeProvider
         attribute="class"
         defaultTheme="system"
@@ -28,6 +28,6 @@ export default function DashboardLayout({
       </ThemeProvider>
 
       <SanityLive />
-    </ClerkProvider>
+    </AuthProvider>
   );
 }

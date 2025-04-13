@@ -17,7 +17,7 @@ import { presentationTool } from "sanity/presentation";
 export default defineConfig({
   basePath: "/studio",
   projectId,
-  dataset,
+  dataset: 'production',
   // Add and edit the content schema in the './sanity/schemaTypes' folder
   schema,
   plugins: [
@@ -36,7 +36,7 @@ export default defineConfig({
   beta: {
     create: {
       startInCreateEnabled: true,
-      fallbackStudioOrigin: "lms-papafam.sanity.studio",
+      fallbackStudioOrigin: "lms-leximos.sanity.studio",
     },
   },
 });

@@ -4,7 +4,7 @@
 import { defineLive } from "next-sanity";
 import { client } from "./client";
 
-const token = process.env.SANITY_API_TOKEN;
+const token = process.env.SANITY_API_TOKEN || "skbNKB81zOaGQ1IVS6uIgcGsziz21UNylW9eSWlChYADL9RvNBZPHMfijwmf03JEruqsUs3X0DmYXSVFSTOm3OU9SKIUU76TjjntzvLWE4Clq0kcxNPeOoOh0zDK0Fov5YgOjwbGnlXBDGDLDYw7CznuqwybYE1J2s6h0NsJi4O1uDt9atCc";
 if (!token) {
   throw new Error("Missing SANITY_API_TOKEN");
 }

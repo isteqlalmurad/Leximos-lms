@@ -6,19 +6,26 @@ import baseUrl from "@/lib/baseUrl";
 import { urlFor } from "@/sanity/lib/image";
 import getCourseById from "@/sanity/lib/courses/getCourseById";
 import { createStudentIfNotExists } from "@/sanity/lib/student/createStudentIfNotExists";
-import { clerkClient } from "@clerk/nextjs/server";
 import { createEnrollment } from "@/sanity/lib/student/createEnrollment";
+import { supabase } from "@/lib/supabase";
 
 export async function createStripeCheckout(courseId: string, userId: string) {
   try {
     // 1. Query course details from Sanity
     const course = await getCourseById(courseId);
-    const clerkUser = await (await clerkClient()).users.getUser(userId);
-    const { emailAddresses, firstName, lastName, imageUrl } = clerkUser;
-    const email = emailAddresses[0]?.emailAddress;
-
-    if (!emailAddresses || !email) {
+    
+    // Get user details from Supabase
+    const { data: userData, error: userError } = await supabase.auth
+      .admin.getUserById(userId);
+    
+    if (userError || !userData.user) {
       throw new Error("User details not found");
+    }
+    
+    const { email, user_metadata } = userData.user;
+    
+    if (!email) {
+      throw new Error("User email not found");
     }
 
     if (!course) {
@@ -27,11 +34,11 @@ export async function createStripeCheckout(courseId: string, userId: string) {
 
     // mid step - create a user in sanity if it doesn't exist
     const user = await createStudentIfNotExists({
-      clerkId: userId,
+      clerkId: userId, // Using Supabase user ID
       email: email || "",
-      firstName: firstName || email,
-      lastName: lastName || "",
-      imageUrl: imageUrl || "",
+      firstName: user_metadata?.firstName || email,
+      lastName: user_metadata?.lastName || "",
+      imageUrl: user_metadata?.avatar_url || "",
     });
 
     if (!user) {
