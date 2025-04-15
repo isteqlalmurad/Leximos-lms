@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
-import getCourseById from "@/sanity/lib/courses/getCourseById";
+import { getCourseById } from "@/lib/courses";
 import { Sidebar } from "@/components/dashboard/Sidebar";
-import { getCourseProgress } from "@/sanity/lib/lessons/getCourseProgress";
+import { getCourseProgress } from "@/lib/lessons";
 import { checkCourseAccess } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/supabase";
 
 interface CourseLayoutProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ export default async function CourseLayout({
   children,
   params,
 }: CourseLayoutProps) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   const { courseId } = await params;
 
   if (!user?.id) {

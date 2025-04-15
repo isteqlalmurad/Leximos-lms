@@ -1,12 +1,12 @@
-import { isEnrolledInCourse } from "@/sanity/lib/student/isEnrolledInCourse";
-import { getStudentByClerkId } from "@/sanity/lib/student/getStudentByClerkId";
-import getCourseById from "@/sanity/lib/courses/getCourseById";
+import { isEnrolledInCourse } from "@/lib/enrollments";
+import { getUserById } from "@/lib/users";
+import { getCourseById } from "@/lib/courses";
 import { getCurrentUser } from "./supabase";
 
 interface AuthResult {
   isAuthorized: boolean;
   redirect?: string;
-  studentId?: string;
+  userId?: string;
 }
 
 export async function checkCourseAccess(
@@ -20,27 +20,32 @@ export async function checkCourseAccess(
     };
   }
 
-  // We're still using the Sanity student functions, but passing in the Supabase userId
-  const student = await getStudentByClerkId(userId);
-  if (!student?.data?._id) {
+  // Get user profile from Supabase
+  const { data: userProfile } = await getUserById(userId);
+  
+  if (!userProfile) {
     return {
       isAuthorized: false,
       redirect: "/",
     };
   }
 
+  // Check if user is enrolled in the course
   const isEnrolled = await isEnrolledInCourse(userId, courseId);
-  const course = await getCourseById(courseId);
+  
+  // If not enrolled, redirect to course page
   if (!isEnrolled) {
+    const course = await getCourseById(courseId);
     return {
       isAuthorized: false,
-      redirect: `/courses/${course?.slug?.current}`,
+      redirect: `/courses/${course?.slug}`,
     };
   }
 
+  // User is authorized to access course content
   return {
     isAuthorized: true,
-    studentId: student.data._id,
+    userId: userId,
   };
 }
 

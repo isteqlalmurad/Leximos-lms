@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { CourseCard } from "@/components/CourseCard";
-import { searchCourses } from "@/sanity/lib/courses/searchCourses";
+import { searchCourses } from "@/lib/courses";
 
 interface SearchPageProps {
   params: Promise<{

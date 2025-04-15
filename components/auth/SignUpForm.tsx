@@ -1,10 +1,12 @@
+// components/auth/SignUpForm.tsx
 "use client";
 
 import { useState } from "react";
 import { signUp } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 
-export function SignUpForm() {
+// Make sure the export is correct using 'export function' syntax
+export function SignUpForm() {  // <- This should match what's being imported
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");

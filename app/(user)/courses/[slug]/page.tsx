@@ -1,11 +1,11 @@
-import { urlFor } from "@/sanity/lib/image";
+import { getImageUrl } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import EnrollButton from "@/components/EnrollButton";
-import getCourseBySlug from "@/sanity/lib/courses/getCourseBySlug";
-import { isEnrolledInCourse } from "@/sanity/lib/student/isEnrolledInCourse";
-import { auth } from "@clerk/nextjs/server";
+import { getCourseBySlug } from "@/lib/courses";
+import { isEnrolledInCourse } from "@/lib/enrollments";
+import { getCurrentUser } from "@/lib/supabase";
 
 interface CoursePageProps {
   params: Promise<{
@@ -16,11 +16,11 @@ interface CoursePageProps {
 export default async function CoursePage({ params }: CoursePageProps) {
   const { slug } = await params;
   const course = await getCourseBySlug(slug);
-  const { userId } = await auth();
+  const user = await getCurrentUser();
 
   const isEnrolled =
-    userId && course?._id
-      ? await isEnrolledInCourse(userId, course._id)
+    user?.id && course?._id
+      ? await isEnrolledInCourse(user.id, course._id)
       : false;
 
   if (!course) {
@@ -37,7 +37,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
       <div className="relative h-[60vh] w-full">
         {course.image && (
           <Image
-            src={urlFor(course.image).url() || ""}
+            src={getImageUrl(course.image).url() || ""}
             alt={course.title || "Course Title"}
             fill
             className="object-cover"
@@ -132,7 +132,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
                     {course.instructor.photo && (
                       <div className="relative h-12 w-12">
                         <Image
-                          src={urlFor(course.instructor.photo).url() || ""}
+                          src={getImageUrl(course.instructor.photo).url() || ""}
                           alt={course.instructor.name || "Course Instructor"}
                           fill
                           className="rounded-full object-cover"

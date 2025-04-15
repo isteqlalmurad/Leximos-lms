@@ -1,87 +1,114 @@
+// components/EnrollButton.tsx
 "use client";
 
-import { createStripeCheckout } from "@/actions/createStripeCheckout";
-import { useAuth } from "@/components/providers/auth-provider";
-import { CheckCircle } from "lucide-react";
-import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useAuth } from "@/components/providers/auth-provider";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { AuthModal } from "./auth/AuthModal";
 
-function EnrollButton({
-  courseId,
-  isEnrolled,
-}: {
+interface EnrollButtonProps {
   courseId: string;
   isEnrolled: boolean;
-}) {
+}
+
+export default function EnrollButton({ courseId, isEnrolled }: EnrollButtonProps) {
   const { user, isLoading: isUserLoading } = useAuth();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleEnroll = async (courseId: string) => {
-    startTransition(async () => {
-      try {
-        const userId = user?.id;
-        if (!userId) return;
-
-        const { url } = await createStripeCheckout(courseId, userId);
-        if (url) {
-          router.push(url);
-        }
-      } catch (error) {
-        console.error("Error in handleEnroll:", error);
-        throw new Error("Failed to create checkout session");
+  const handleEnroll = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      setError("");
+      
+      const response = await fetch("/api/enroll", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ courseId }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to enroll");
       }
-    });
+      
+      // For free courses, redirect to course page
+      if (data.redirect) {
+        router.push(data.redirect);
+        return;
+      }
+      
+      // For paid courses, redirect to Stripe checkout
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+      
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Enrollment error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Show loading state while checking user is loading
-  if (isUserLoading || isPending) {
+  // Show loading state
+  if (isUserLoading || isLoading) {
     return (
-      <div className="w-full h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-gray-400 border-t-gray-600 rounded-full animate-spin" />
-      </div>
+      <Button disabled className="w-full h-12">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        {isLoading ? "Processing..." : "Loading..."}
+      </Button>
     );
   }
 
-  // Show enrolled state with link to course
+  // Show enrolled state
   if (isEnrolled) {
     return (
-      <Link
-        prefetch={false}
-        href={`/dashboard/courses/${courseId}`}
-        className="w-full rounded-lg px-6 py-3 font-medium bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 transition-all duration-300 h-12 flex items-center justify-center gap-2 group"
-      >
-        <span>Access Course</span>
-        <CheckCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+      <Link href={`/dashboard/courses/${courseId}`} className="w-full">
+        <Button className="w-full h-12 bg-green-600 hover:bg-green-700">
+          <CheckCircle className="mr-2 h-4 w-4" />
+          Access Course
+        </Button>
       </Link>
     );
   }
 
-  // Show enroll button only when we're sure user is not enrolled
-  // If not logged in, show auth modal
-  if (!user?.id) {
+  // Show auth modal for not logged in users
+  if (!user) {
     return (
       <AuthModal
         defaultTab="sign-in"
         trigger={
-          <button className="w-full rounded-lg px-6 py-3 font-medium bg-white text-black hover:bg-gray-100 transition-all duration-300 h-12">
+          <Button className="w-full h-12">
             Sign in to Enroll
-          </button>
+          </Button>
         }
       />
     );
   }
 
+  // Show enroll button
   return (
-    <button
-      className="w-full rounded-lg px-6 py-3 font-medium bg-white text-black hover:scale-105 hover:shadow-lg hover:shadow-black/10 transition-all duration-300 h-12"
-      onClick={() => handleEnroll(courseId)}
-    >
-      Enroll Now
-    </button>
+    <>
+      {error && (
+        <div className="text-red-500 text-sm mb-2">{error}</div>
+      )}
+      <Button 
+        onClick={handleEnroll} 
+        className="w-full h-12"
+      >
+        Enroll Now
+      </Button>
+    </>
   );
 }
-
-export default EnrollButton;

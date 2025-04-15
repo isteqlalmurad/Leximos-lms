@@ -3,15 +3,15 @@
 import stripe from "@/lib/stripe";
 import baseUrl from "@/lib/baseUrl";
 
-import { urlFor } from "@/sanity/lib/image";
-import getCourseById from "@/sanity/lib/courses/getCourseById";
-import { createStudentIfNotExists } from "@/sanity/lib/student/createStudentIfNotExists";
-import { createEnrollment } from "@/sanity/lib/student/createEnrollment";
+import { getImageUrl } from "@/lib/utils";
+import { getCourseById } from "@/lib/courses";
+import { createUserIfNotExists } from "@/lib/users";
+import { createEnrollment } from "@/lib/enrollments";
 import { supabase } from "@/lib/supabase";
 
 export async function createStripeCheckout(courseId: string, userId: string) {
   try {
-    // 1. Query course details from Sanity
+    // 1. Query course details from Supabase
     const course = await getCourseById(courseId);
     
     // Get user details from Supabase
@@ -32,8 +32,8 @@ export async function createStripeCheckout(courseId: string, userId: string) {
       throw new Error("Course not found");
     }
 
-    // mid step - create a user in sanity if it doesn't exist
-    const user = await createStudentIfNotExists({
+    // Create a user profile if it doesn't exist
+    const user = await createUserIfNotExists({
       clerkId: userId, // Using Supabase user ID
       email: email || "",
       firstName: user_metadata?.firstName || email,
@@ -46,7 +46,7 @@ export async function createStripeCheckout(courseId: string, userId: string) {
     }
 
     // 2. Validate course data and prepare price for Stripe
-    if (!course.price && course.price !== 0) {
+    if (typeof course.price !== 'number') {
       throw new Error("Course price is not set");
     }
     const priceInCents = Math.round(course.price * 100);
@@ -54,18 +54,18 @@ export async function createStripeCheckout(courseId: string, userId: string) {
     // if course is free, create enrollment and redirect to course page (BYPASS STRIPE CHECKOUT)
     if (priceInCents === 0) {
       await createEnrollment({
-        studentId: user._id,
-        courseId: course._id,
+        studentId: userId,
+        courseId: courseId,
         paymentId: "free",
         amount: 0,
       });
 
-      return { url: `/courses/${course.slug?.current}` };
+      return { url: `/courses/${course.slug}` };
     }
 
-    const { title, description, image, slug } = course;
+    const { title, description, image_url, slug } = course;
 
-    if (!title || !description || !image || !slug) {
+    if (!title || !description || !slug) {
       throw new Error("Course data is incomplete");
     }
 
@@ -78,7 +78,7 @@ export async function createStripeCheckout(courseId: string, userId: string) {
             product_data: {
               name: title,
               description: description,
-              images: [urlFor(image).url() || ""],
+              images: image_url ? [image_url] : [],
             },
             unit_amount: priceInCents,
           },
@@ -86,10 +86,10 @@ export async function createStripeCheckout(courseId: string, userId: string) {
         },
       ],
       mode: "payment",
-      success_url: `${baseUrl}/courses/${slug.current}`,
-      cancel_url: `${baseUrl}/courses/${slug.current}?canceled=true`,
+      success_url: `${baseUrl}/courses/${slug}`,
+      cancel_url: `${baseUrl}/courses/${slug}?canceled=true`,
       metadata: {
-        courseId: course._id,
+        courseId: courseId,
         userId: userId,
       },
     });

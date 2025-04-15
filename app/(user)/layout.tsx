@@ -1,6 +1,7 @@
+// app/(user)/layout.tsx
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SanityLive } from "@/sanity/lib/live";
+// Remove SanityLive import
 import Header from "@/components/Header";
 import { AuthProvider } from "@/components/providers/auth-provider";
 
@@ -27,8 +28,8 @@ export default function UserLayout({
           <main className="flex-1">{children}</main>
         </div>
       </ThemeProvider>
-
-      <SanityLive />
+      
+      {/* Remove SanityLive component */}
     </AuthProvider>
   );
 }

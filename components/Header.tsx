@@ -1,3 +1,4 @@
+// components/Header.tsx
 "use client";
 
 import { BookMarkedIcon, BookOpen, User } from "lucide-react";
@@ -5,7 +6,7 @@ import Link from "next/link";
 import { SearchInput } from "./SearchInput";
 import { Button } from "./ui/button";
 import DarkModeToggle from "./DarkModeToggle";
-import { useAuth } from "@/components/providers/auth-provider";
+import { useAuth } from "@/components/providers/auth-provider";  // Make sure this import is present
 import { AuthModal } from "./auth/AuthModal";
 import { signOut } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Header() {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();  // Get profile from auth context
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -74,6 +75,21 @@ export default function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/my-courses">My Courses</Link>
                   </DropdownMenuItem>
+                  
+                  {/* Add the instructor link - check if profile exists first */}
+                  {profile?.role === 'student' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/become-instructor">Become an Instructor</Link>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {/* If user is already an instructor, show the instructor dashboard */}
+                  {profile?.role === 'instructor' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/instructor/dashboard">Instructor Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  
                   <DropdownMenuItem asChild>
                     <Link href="/profile">Profile</Link>
                   </DropdownMenuItem>

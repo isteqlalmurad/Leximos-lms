@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
-import { getLessonById } from "@/sanity/lib/lessons/getLessonById";
+import { getLessonById } from "@/lib/lessons";
 import { PortableText } from "@portabletext/react";
 import { LoomEmbed } from "@/components/LoomEmbed";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { LessonCompleteButton } from "@/components/LessonCompleteButton";
+import { getCurrentUser } from "@/lib/supabase";
 
 interface LessonPageProps {
   params: Promise<{
@@ -14,8 +14,12 @@ interface LessonPageProps {
 }
 
 export default async function LessonPage({ params }: LessonPageProps) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
   const { courseId, lessonId } = await params;
+
+  if (!user) {
+    return redirect(`/`);
+  }
 
   const lesson = await getLessonById(lessonId);
 
@@ -51,7 +55,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
             )}
 
             <div className="flex justify-end">
-              <LessonCompleteButton lessonId={lesson._id} clerkId={user!.id} />
+              <LessonCompleteButton lessonId={lesson._id} clerkId={user.id} />
             </div>
           </div>
         </div>

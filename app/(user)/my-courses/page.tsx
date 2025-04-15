@@ -1,13 +1,13 @@
-import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { getEnrolledCourses } from "@/sanity/lib/student/getEnrolledCourses";
+import { getEnrolledCourses } from "@/lib/enrollments";
 import Link from "next/link";
 import { GraduationCap } from "lucide-react";
-import { getCourseProgress } from "@/sanity/lib/lessons/getCourseProgress";
+import { getCourseProgress } from "@/lib/lessons";
 import { CourseCard } from "@/components/CourseCard";
+import { getCurrentUser } from "@/lib/supabase";
 
 export default async function MyCoursesPage() {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user?.id) {
     return redirect("/");
