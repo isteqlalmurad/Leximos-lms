@@ -77,11 +77,12 @@ export default function BecomeInstructorPage() {
     );
   }
   
-  // If already an instructor, redirect to dashboard
+// Add this useEffect after the existing one:
+useEffect(() => {
   if (profile?.role === 'instructor' || profile?.role === 'admin') {
     router.push('/instructor/dashboard');
-    return null;
   }
+}, [profile, router]);
   
   return (
     <div className="container mx-auto px-4 py-12 max-w-2xl">
